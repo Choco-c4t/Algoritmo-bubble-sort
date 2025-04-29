@@ -1,0 +1,107 @@
+.data
+array:  .word 7, 6, 9, 2, 5   # Lista de ejemplo
+n:      .word 5               # Número de elementos
+msg1:   .asciiz "Array antes de ordenar:\n"
+msg2:   .asciiz "\nArray después de ordenar:\n"
+
+.text
+.globl main
+
+main:
+    # Mostrar mensaje inicial
+    li $v0, 4
+    la $a0, msg1
+    syscall
+
+    # Mostrar array original
+    la $s0, array       # $s0 = inicio del array
+    lw $s1, n           # $s1 = número de elementos
+    li $t0, 0           # índice = 0
+
+print_array_start:
+    beq $t0, $s1, bubble_sort   # Si llegamos al final, saltar a ordenar
+    sll $t1, $t0, 2           # t1 = índice * 4 (offset)
+    add $t2, $s0, $t1         # Dirección del elemento
+    lw $a0, 0($t2)            # Cargar el valor
+
+    li $v0, 1                 # syscall para imprimir entero
+    syscall
+
+    # Imprimir un espacio
+    li $v0, 4
+    la $a0, space
+    syscall
+
+    addi $t0, $t0, 1
+    j print_array_start
+
+# Ordenar array usando Bubble Sort (de mínimo a máximo)
+bubble_sort:
+    la $s0, array       # $s0 = dirección base del array
+    lw $s1, n           # $s1 = número de elementos
+    sub $s2, $s1, 1     # $s2 = índice final (n-1)
+
+bubble_outer_loop:
+    li $t0, 0           # i = 0
+    li $t3, 0           # flag para saber si hubo cambios
+
+bubble_inner_loop:
+    sll $t1, $t0, 2         # t1 = i * 4
+    add $t4, $s0, $t1       # Dirección de array[i]
+    lw $t5, 0($t4)          # Cargar array[i]
+    addi $t1, $t0, 1
+    sll $t1, $t1, 2         # t1 = (i+1) * 4
+    add $t6, $s0, $t1       # Dirección de array[i+1]
+    lw $t7, 0($t6)          # Cargar array[i+1]
+
+    # Comparar array[i] con array[i+1]
+    ble $t5, $t7, no_swap  # Si array[i] <= array[i+1], no hacer swap
+
+    # Intercambiar array[i] y array[i+1] para orden ascendente
+    sw $t7, 0($t4)
+    sw $t5, 0($t6)
+    li $t3, 1           # Set flag to indicate a swap occurred
+
+no_swap:
+    addi $t0, $t0, 1
+    blt $t0, $s2, bubble_inner_loop  # Repetir si no hemos llegado al final del arreglo
+
+    # Si no hubo intercambios, el arreglo ya está ordenado
+    beqz $t3, bubble_outer_done
+    sub $s2, $s2, 1         # Decrementar el límite superior del arreglo
+    j bubble_outer_loop
+
+bubble_outer_done:
+    # Mostrar mensaje después de ordenar
+    li $v0, 4
+    la $a0, msg2
+    syscall
+
+    # Mostrar array ordenado
+    la $s0, array
+    lw $s1, n
+    li $t0, 0
+
+print_array_sorted:
+    beq $t0, $s1, done
+    sll $t1, $t0, 2
+    add $t2, $s0, $t1
+    lw $a0, 0($t2)
+
+    li $v0, 1
+    syscall
+
+    # Imprimir un espacio
+    li $v0, 4
+    la $a0, space
+    syscall
+
+    addi $t0, $t0, 1
+    j print_array_sorted
+
+done:
+    li $v0, 10
+    syscall
+
+.data
+space: .asciiz " "
